@@ -1,0 +1,119 @@
+#!/bin/bash
+
+# Define variables
+REPO_URL="https://github.com/music/events.git"
+PROJECT_DIR="/home/ubuntu/mydir"
+PROJECT_NAME="myproject"
+DOMAIN="ip_or_domain"
+USER="ubuntu"
+GUNICORN_WORKERS=3
+
+
+sudo apt update
+sudo apt install -y python3-venv python3-dev libpq-dev nginx curl
+
+# Clone the project from GitHub
+git clone $REPO_URL $PROJECT_DIR
+
+# Navigate to the project directory
+cd $PROJECT_DIR
+
+# Create and activate a virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Apply database migrations
+python manage.py makemigrations
+python manage.py migrate
+
+# Collect static files
+python manage.py collectstatic --noinput
+
+# Create Gunicorn systemd socket file
+sudo tee /etc/systemd/system/gunicorn.socket > /dev/null <<EOF
+[Unit]
+Description=gunicorn socket
+
+[Socket]
+ListenStream=/run/gunicorn.sock
+
+[Install]
+WantedBy=sockets.target
+EOF
+
+# Create Gunicorn systemd service file
+sudo tee /etc/systemd/system/gunicorn.service > /dev/null <<EOF
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+User=$USER
+Group=www-data
+WorkingDirectory=$PROJECT_DIR
+ExecStart=$PROJECT_DIR/venv/bin/gunicorn --access-logfile - --workers 
+$GUNICORN_WORKERS --bind unix:/run/gunicorn.sock 
+$PROJECT_NAME.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Start and enable Gunicorn service
+sudo systemctl start gunicorn.socket
+sudo systemctl enable gunicorn.socket
+
+sudo systemctl daemon-reload
+sudo systemctl restart gunicorn
+
+# Create static and media directories if they don't exist
+mkdir -p static media
+
+# Set permissions for static and media directories
+# sudo chown -R $USER:www-data static media
+# sudo chmod -R 775 static media
+
+sudo adduser www-data $USER
+
+# Create Nginx server block configuration
+sudo tee /etc/nginx/sites-available/$PROJECT_NAME > /dev/null <<EOF
+server {
+    listen 80;
+    server_name $DOMAIN;
+
+    location /static/ {
+        root $PROJECT_DIR/;
+    }
+
+    location /media/ {
+        root $PROJECT_DIR/;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/gunicorn.sock;
+    }
+}
+EOF
+
+# Enable the Nginx configuration
+sudo ln -s /etc/nginx/sites-available/$PROJECT_NAME 
+/etc/nginx/sites-enabled
+
+# Test the Nginx configuration
+sudo nginx -t
+
+# Restart Nginx
+sudo systemctl restart nginx
+
+echo "Deployment completed successfully!"
+
+
+
+
+
+

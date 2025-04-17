@@ -1,0 +1,14 @@
+server {
+    listen 80;
+# put in your public ip address 
+    server_name _;
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+# make sure the static directory doesnt end with /static/
+        root /var/www/cloud_deployment/;
+    }
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/gunicorn.sock;
+    }
+}

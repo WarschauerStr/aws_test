@@ -1,0 +1,76 @@
+1. Install the following Updates
+    sudo apt-get update
+    sudo apt-get upgrade
+    sudo apt-get install -y nginx
+    sudo apt-get install python3-dev
+    sudo apt-get install python3-pip
+    sudo apt-get install python3-virtualenv
+    sudo apt install python3.12-venv
+    sudo apt install postgresql postgresql-contrib
+
+2. Set Up Postgresql
+    sudo -u postgres psql
+
+    CREATE USER yourusername WITH PASSWORD 'yourpassword';
+    CREATE DATABASE yourdatabase;
+    GRANT ALL PRIVILEGES ON DATABASE yourdatabase TO yourusername;
+
+    \q
+
+    sudo service postgresql restart
+
+3. Create a directory called projects and Clone Your Project into EC2 from Github
+
+4. Cd into Your Project Directory
+
+5. Create a Virtual environment and Install all the necessary libraries
+
+6. create an env file for your terminal and gunicorn
+
+7. set up Gunicorn by doing the following
+
+    - cd into /etc/systemd/system/
+    - sudo nano gunicorn.socket and update accordingly
+    - sudo nano gunicorn.service and update accordingly
+    - create a log dir (sudo mkdir /var/log/gunicorn)
+
+8. run the following commands to update system
+
+    - sudo systemctl start gunicorn.socket
+    - sudo systemctl enable gunicorn.socket
+    - sudo systemctl status gunicorn.socket
+    -- file /run/gunicorn.sock (if empty, there is a problem) (Optional)
+    -- sudo journalctl -u gunicorn.socket (to check gunicorn logs) (Optional)
+    - sudo systemctl status gunicorn
+
+9. set up Nginx by 
+
+    - update this file /etc/nginx/nginx.conf to have user as ubuntu
+
+    - ls /etc/nginx/sites-enabled to see if any files exists here
+    - sudo rm -rf the file from above
+    - cd into /etc/nginx/sites-available/
+    - sudo nano nginx_app_name and update the lines accordingly
+    - sudo ln nginx_app_name /etc/nginx/sites-enabled (to link both entities)
+
+10. run the following commands to update system
+
+    -- sudo gpasswd -a www-data ubuntu (Optional)
+    -- sudo ufw delete allow 8000 (Optional)
+    -- sudo ufw allow 'Nginx Full' (Optional)
+    - sudo systemctl restart nginx
+    - sudo service gunicorn restart
+    - sudo service nginx restart
+
+11. to check logs on even of errors
+
+    - sudo tail -f /var/log/nginx/error.log
+    - sudo systemctl status nginx
+    - sudo systemctl status gunicorn
+
+
+## If you do not have an Elastic IP
+- when you start your instance after some TIME
+- update your server public IP address in your nginx config file in /etc/nginx/sites-available/
+- then run sudo service nginx restart
+

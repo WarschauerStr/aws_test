@@ -1,0 +1,65 @@
+1. Install the following Updates
+    sudo apt-get update
+    sudo apt-get upgrade
+    sudo apt-get install supervisor
+    sudo apt-get install -y nginx
+    sudo apt-get install python3-dev
+    sudo apt-get install python3-pip
+    sudo apt-get install python3-virtualenv
+    sudo apt install python3.10-venv
+    sudo apt install postgresql postgresql-contrib
+
+2. Set Up Postgresql
+    sudo -u postgres psql
+
+    CREATE USER yourusername WITH PASSWORD 'yourpassword';
+    CREATE DATABASE yourdatabase;
+    GRANT ALL PRIVILEGES ON DATABASE yourdatabase TO yourusername;
+
+    \q
+    
+    sudo service postgresql restart
+
+3. Clone Your Project into EC2 from Github 
+
+4. Cd into Your Project Directory 
+
+5. Create a Virtual environment and Install all the necessary library
+
+6. set up Gunicorn by
+
+    - cd into /etc/supervisor/conf.d/
+    - sudo nano gunicorn.conf and update accordingly
+    - create a log dir (sudo mkdir /var/log/gunicorn)
+    - to read logs, sudo nano /var/log/gunicorn/gunicorn.err.log 
+
+7. run the following commands to update supervisor # Done
+
+    - sudo supervisorctl reread
+    (if you have secret key errors, edit yours to have  just alphanumeric characters)
+    - sudo supervisorctl update
+    - sudo supervisorctl status ( check health)
+
+8. set up Nginx by 
+
+    - cd into /etc/nginx/
+    - use who (or w) command to check the user 
+    - sudo nano nginx.conf and update user to (user from the second step)
+    - cd into /etc/nginx/sites-available/
+    - sudo nano nginx_app_name.conf and update
+    - sudo nginx -t
+    - sudo ln nginx_app_name.conf /etc/nginx/sites-enabled (to link both entities)
+
+9. run the following commands to update and restart nginx
+
+    - sudo service nginx restart
+
+10. to check logs
+
+    - sudo tail -f /var/log/nginx/error.log
+    - sudo systemctl status nginx
+
+## If you do not have an Elastic IP
+- when you start your instance after some TIME
+- update your server public IP address in your nginx config file in /etc/nginx/sites-available/
+- then run sudo service nginx restart

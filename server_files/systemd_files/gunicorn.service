@@ -1,0 +1,17 @@
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/projects/deploy_django
+EnvironmentFile=/home/ubuntu/projects/deploy_django/.env
+ExecStart=/home/ubuntu/projects/deploy_django/venv/bin/gunicorn \
+          --access-logfile - \
+          --workers 3 \
+          --bind unix:/run/gunicorn.sock \
+          my_api_configuration.wsgi:application
+[Install]
+WantedBy=multi-user.target
